@@ -3,29 +3,42 @@
 /* lexical grammar */
 %lex
 
-RN                    \r\n
-EOL 									\r\n|\r|\n        /* end of line character */
-NEOL									[^\r\n]	          /* not end of line character */
-TB                    [^ \t\r\n]        /* textblock character */
-WS                    [\t ]							/* whitespace character */
-BL                    ({EOL}*{WS}*)*
+H                          [0-9a-f]
+/*H2                         {H}{H}*/
+/*H4                         {H2}{H2}*/
+/*H8                         {H2}{H2}*/
+/*H16                        {H8}{H8}*/
+/*H32                        {H16}{H16}*/
+/*H64                        {H32}{H32}*/
 
 %%
 
 /*%token block*/
 
+
+
 \s                         /* IGNORE */
-'?'([\w\.]+)               { yytext = this.matches[1]; return 'QUESTION'; }
-'{'                        return '{'
-'}'                        return '}'
-':'                        return ':'
-'='                        return '='
-','                        return ','
-[\w-_\.]+                  return 'ID'
-\".*\”                     return 'STRING'
-\'.*\'                     return 'STRING'
-[\d\.]+                    return 'NUMBER'
+
+
+/*  EXTENDED TOKENS  */
+
+0x{H}+                     return 'HASH'
+\d+\.\d                    return 'FLOAT'
+'['                        return '['
+']'                        return ']'
+';'                        return ';'
+'&'                        return '&'
+
+
+/*  ORIGINAL TOKENS  */
+'('                        return '('
+')'                        return ')'
+'+'                        return '+'
+[\d]+                      return 'NUMBER'
 <<EOF>>                    return 'EOF'
+
+
+
 .                          return 'INVALID'
 
 
@@ -33,28 +46,42 @@ BL                    ({EOL}*{WS}*)*
 /lex
 
 
-%start APP
+%start SSA
 
 %% /* language grammar */
 
-APP: EXPR EOF
-   { return $1; }
-   ;
-   
+/* EXTENDED GRAMMER */
 
-EXPR : QUESTION '=' '{' OPT_PARAMS '}' EXPR
-     { $$ = [{ name: 'question', validator: $OPT_PARAMS }].concat($EXPR); }
-     | ID '=' ID EXPR
-     { $$ = [{ name: 'expr', key: $1, value: $3 }].concat($EXPR); }
-     | 
-     { $$ = []; }
-     ;
-    
-OPT_PARAMS : ID ':' ID
-           { var o={}; o[$1]=$3; $$ = o; }
-           | ID ':' ID ',' OPT_PARAMS
-           { var o = $OPT_PARAMS; o[$1]=$3; $$ = o; }
+SSA: '[' ACTEURS ']' SA;
+ 
+ACTEURS: '[' HASH ';' NUMBER ']' ';' ACTEURS
+       | /* empty */
+       ;
+
+VOTING: '[' HASH ';' FLOAT ']' ';' VOTING
+      | /* empty */
+      ;
+
+DELEGATIONS: '[' HASH ';' HASH ']' ';' DELEGATIONS
+           | /*empty*/
            ;
+
+
+/* OPTIONS */
+
+O: '(' A '+' A ')' '&' '[' VOTING ']' ';' O
+ | NUMBER '&' '[' VOTING ']' ';' O
+ | /* empty */
+ ;
+
+/* ORIGINAL GRAMMER */
+
+SA: A EOF;
+
+A: '(' A '+' A ')'
+ | NUMBER
+ | '[' O ']' '[' DELEGATIONS ']'
+ ;
 
 
 %%

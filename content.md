@@ -1,11 +1,10 @@
-?var = {
-  type: String,
-  max-length: 20
-}
-
-?is.halt.so = {
-  type: String,
-  max-length: 20
-}
-
-is.halt.so = 2
+[
+[0x00;10];
+[0x01;10];
+]
+(1+
+  [ 
+    1 &[ [ 0x01; 1.0 ]; ]; 
+    2 &[];
+  ] []
+)
