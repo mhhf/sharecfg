@@ -74,9 +74,9 @@
 var rlogParser = (function(){
 var parser = {trace: function trace() { },
 yy: {},
-symbols_: {"error":2,"APP":3,"EXPR":4,"EOF":5,"QUESTION":6,"=":7,"{":8,"OPT_PARAMS":9,"}":10,"ID":11,":":12,",":13,"$accept":0,"$end":1},
-terminals_: {2:"error",5:"EOF",6:"QUESTION",7:"=",8:"{",10:"}",11:"ID",12:":",13:","},
-productions_: [0,[3,2],[4,6],[4,4],[4,0],[9,3],[9,5]],
+symbols_: {"error":2,"APP":3,"EXPR":4,"EOF":5,"QUESTION":6,"=":7,"{":8,"OPT_PARAMS":9,"}":10,"ID":11,"TERM":12,"KEY":13,":":14,",":15,"STRING":16,"NUMBER":17,"$accept":0,"$end":1},
+terminals_: {2:"error",5:"EOF",6:"QUESTION",7:"=",8:"{",10:"}",11:"ID",14:":",15:",",16:"STRING",17:"NUMBER"},
+productions_: [0,[3,2],[4,6],[4,4],[4,0],[9,3],[9,5],[13,1],[13,1],[12,1],[12,1],[12,1]],
 performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
 /* this == yyval */
 
@@ -84,7 +84,7 @@ var $0 = $$.length - 1;
 switch (yystate) {
 case 1: return $$[$0-1]; 
 break;
-case 2: this.$ = [{ name: 'question', validator: $$[$0-2] }].concat($$[$0]); 
+case 2: this.$ = [{ name: 'question', key:$$[$0-5], validator: $$[$0-2] }].concat($$[$0]); 
 break;
 case 3: this.$ = [{ name: 'expr', key: $$[$0-3], value: $$[$0-1] }].concat($$[$0]); 
 break;
@@ -96,8 +96,8 @@ case 6: var o = $$[$0]; o[$$[$0-4]]=$$[$0-2]; this.$ = o;
 break;
 }
 },
-table: [{3:1,4:2,5:[2,4],6:[1,3],11:[1,4]},{1:[3]},{5:[1,5]},{7:[1,6]},{7:[1,7]},{1:[2,1]},{8:[1,8]},{11:[1,9]},{9:10,11:[1,11]},{4:12,5:[2,4],6:[1,3],11:[1,4]},{10:[1,13]},{12:[1,14]},{5:[2,3]},{4:15,5:[2,4],6:[1,3],11:[1,4]},{11:[1,16]},{5:[2,2]},{10:[2,5],13:[1,17]},{9:18,11:[1,11]},{10:[2,6]}],
-defaultActions: {5:[2,1],12:[2,3],15:[2,2],18:[2,6]},
+table: [{3:1,4:2,5:[2,4],6:[1,3],11:[1,4]},{1:[3]},{5:[1,5]},{7:[1,6]},{7:[1,7]},{1:[2,1]},{8:[1,8]},{11:[1,11],12:9,16:[1,10],17:[1,12]},{9:13,11:[1,15],13:14,16:[1,16]},{4:17,5:[2,4],6:[1,3],11:[1,4]},{5:[2,9],6:[2,9],10:[2,9],11:[2,9],15:[2,9]},{5:[2,10],6:[2,10],10:[2,10],11:[2,10],15:[2,10]},{5:[2,11],6:[2,11],10:[2,11],11:[2,11],15:[2,11]},{10:[1,18]},{14:[1,19]},{14:[2,7]},{14:[2,8]},{5:[2,3]},{4:20,5:[2,4],6:[1,3],11:[1,4]},{11:[1,11],12:21,16:[1,10],17:[1,12]},{5:[2,2]},{10:[2,5],15:[1,22]},{9:23,11:[1,15],13:14,16:[1,16]},{10:[2,6]}],
+defaultActions: {5:[2,1],15:[2,7],16:[2,8],17:[2,3],20:[2,2],23:[2,6]},
 parseError: function parseError(str, hash) {
     if (hash.recoverable) {
         this.trace(str);
@@ -572,19 +572,19 @@ case 2:return 8
 break;
 case 3:return 10
 break;
-case 4:return 12
+case 4:return 14
 break;
 case 5:return 7
 break;
-case 6:return 13
+case 6:return 15
 break;
 case 7:return 11
 break;
-case 8:return 'STRING'
+case 8: yy_.yytext = this.matches[1]; return 16; 
 break;
-case 9:return 'STRING'
+case 9: yy_.yytext = this.matches[1]; return 16; 
 break;
-case 10:return 'NUMBER'
+case 10:return 17
 break;
 case 11:return 5
 break;
@@ -592,7 +592,7 @@ case 12:return 'INVALID'
 break;
 }
 },
-rules: [/^(?:\s)/,/^(?:\?([\w\.]+))/,/^(?:\{)/,/^(?:\})/,/^(?::)/,/^(?:=)/,/^(?:,)/,/^(?:[\w-_\.]+)/,/^(?:".*”)/,/^(?:'.*')/,/^(?:[\d\.]+)/,/^(?:$)/,/^(?:.)/],
+rules: [/^(?:\s)/,/^(?:\?([\w\.]+))/,/^(?:\{)/,/^(?:\})/,/^(?::)/,/^(?:=)/,/^(?:,)/,/^(?:[\w-_\.]+)/,/^(?:"([^\"]*)")/,/^(?:'([^\']*)')/,/^(?:[\d\.]+)/,/^(?:$)/,/^(?:.)/],
 conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12],"inclusive":true}}
 };
 return lexer;
@@ -622,3 +622,4 @@ if (typeof module !== 'undefined' && require.main === module) {
   exports.main(process.argv.slice(1));
 }
 }
+RlogParser = rlogParser;

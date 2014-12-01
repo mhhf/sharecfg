@@ -1,3 +1,6 @@
+%{
+ this.yy.a = {};
+%}
 /* description: Parses end executes mathematical expressions. */
 
 /* lexical grammar */
@@ -54,34 +57,56 @@ H                          [0-9a-f]
 
 SSA: '[' ACTEURS ']' SA;
  
-ACTEURS: '[' HASH ';' NUMBER ']' ';' ACTEURS
+ACTEURS: '[' HASH NUMBER ']' ACTEURS
+       { yy.a[$2] = $3; }
        | /* empty */
+       { yy.a = {} }
        ;
 
-VOTING: '[' HASH ';' FLOAT ']' ';' VOTING
+VOTING: '[' HASH FLOAT ']' VOTING
+        { $$ = yy.a[$2]*parseFloat($3)+$5; }
       | /* empty */
+        { $$ = 0; }
       ;
 
-DELEGATIONS: '[' HASH ';' HASH ']' ';' DELEGATIONS
+DELEGATIONS: '[' HASH ';' HASH ']' DELEGATIONS
            | /*empty*/
            ;
 
-
 /* OPTIONS */
 
-O: '(' A '+' A ')' '&' '[' VOTING ']' ';' O
- | NUMBER '&' '[' VOTING ']' ';' O
+O: '(' A '+' A ')' '&' '[' VOTING ']' O
+ { $$ = $10.concat({k:$1+$2+$3+$4+$5,v:$8}); }
+ | NUMBER '&' '[' VOTING ']' O
+ { 
+    $$ = $6.concat({k:$1,v:$4});
+ }
  | /* empty */
+ { $$ = []; }
  ;
 
 /* ORIGINAL GRAMMER */
 
-SA: A EOF;
+SA: A EOF
+  { return $1; }
+  ;
 
 A: '(' A '+' A ')'
+  { $$ = $1 + $2 + $3 + $4 + $5; }
  | NUMBER
- | '[' O ']' '[' DELEGATIONS ']'
+  { $$ = $1; }
+ | '[' O ']' '[' DELEGATIONS ']' /* EXTENDED */
+  { 
+    var k, v;
+    $2.forEach(function(e){
+      if( !v || e.v>v ) {
+        v = e.v;
+        k = e.k;
+      }
+    });
+  $$ = k; }
  ;
 
 
 %%
+
