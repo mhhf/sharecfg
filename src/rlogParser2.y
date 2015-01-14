@@ -55,48 +55,56 @@ H                          [0-9a-f]
 
 /* EXTENDED GRAMMER */
 
-SSA: '[' ACTEURS ']' SA
-   { 
-   return new yy.Node('SSA','[',$2,']', $4);
-   }
-   ;
+SSA: '[' ACTEURS ']' SA;
  
 ACTEURS: '[' HASH NUMBER ']' ACTEURS
-       { $$ = new yy.Node('ACTEURS','[', $2, $3, ']', $5) }
+       { yy.a[$2] = $3; }
        | /* empty */
+       { yy.a = {} }
        ;
 
 VOTING: '[' HASH FLOAT ']' VOTING
-       { $$ = new yy.Node('VOTING','[', $2, $3, ']', $5) }
+        { $$ = yy.a[$2]*parseFloat($3)+$5; }
       | /* empty */
+        { $$ = 0; }
       ;
 
-DELEGATIONS: '[' HASH HASH ']' DELEGATIONS
-           { $$ = new yy.Node('DELEGATIONS','[', $2, $3, ']', $5) }
+DELEGATIONS: '[' HASH ';' HASH ']' DELEGATIONS
            | /*empty*/
            ;
 
 /* OPTIONS */
 
 O: '(' A '+' A ')' '&' '[' VOTING ']' O
- { $$ = new yy.Node('O','(', $2, '+', $4, ')', '&', '[' , $8, ']', $10) }
+ { $$ = $10.concat({k:$1+$2+$3+$4+$5,v:$8}); }
  | NUMBER '&' '[' VOTING ']' O
- { $$ = new yy.Node( 'O',$1, '&', '[', $4, ']', $6 ) }
+ { 
+    $$ = $6.concat({k:$1,v:$4});
+ }
  | /* empty */
+ { $$ = []; }
  ;
 
 /* ORIGINAL GRAMMER */
 
 SA: A EOF
-  { $$ = new yy.Node('SA', $1); }
+  { return $1; }
   ;
 
 A: '(' A '+' A ')'
- { $$ = new yy.Node( 'A', '(', $2, '+', $4, ')' ); }
+  { $$ = $1 + $2 + $3 + $4 + $5; }
  | NUMBER
- { $$ = new yy.Node('A', $1); }
+  { $$ = $1; }
  | '[' O ']' '[' DELEGATIONS ']' /* EXTENDED */
-  { $$ = new yy.Node('A', '[', $2, ']', '[', $5, ']')}
+  { 
+    var k, v;
+    $2.forEach(function(e){
+      if( !v || e.v>v ) {
+        v = e.v;
+        k = e.k;
+      }
+    });
+  $$ = k; }
  ;
 
 
