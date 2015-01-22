@@ -34,15 +34,6 @@ H                          [0-9a-f]
 
 
 /*  ORIGINAL TOKENS  */
-'('                        return '('
-')'                        return ')'
-'+'                        return '+'
-[\d]+                      return 'NUMBER'
-<<EOF>>                    return 'EOF'
-
-
-
-.                          return 'INVALID'
 
 
 
@@ -55,49 +46,54 @@ H                          [0-9a-f]
 
 /* EXTENDED GRAMMER */
 
+
+/*
 SSA: '[' ACTEURS ']' SA
+   { return new yy.Node('SSA',[ '[', $2, ']', $4 ]); }
+   ;
+*/
+
+SSA: '[' ACTEURS ']' '[' O_SA ']' '[' DELEGATIONS ']'
    { 
-   return new yy.Node('SSA','[',$2,']', $4);
+    var node = new yy.Node('SSA',[ '[', $2, ']', '[', $5, ']', '[', $8, ']' ], {delegations: $8});
+    node.build();
+    return node;
    }
    ;
  
 ACTEURS: '[' HASH NUMBER ']' ACTEURS
-       { $$ = new yy.Node('ACTEURS','[', $2, $3, ']', $5) }
+       { 
+        var obj;
+        if( typeof $5 == 'object' ) {
+          obj = $5; 
+        } else {
+          obj = {}; 
+        }
+        obj[$2] = parseInt($3); $$ = obj; 
+       }
        | /* empty */
        ;
 
+/* TODO: rewrite voting and deligation as own classes */
 VOTING: '[' HASH FLOAT ']' VOTING
-       { $$ = new yy.Node('VOTING','[', $2, $3, ']', $5) }
+       { 
+        var obj;
+        if( typeof $5 == 'object' ) {
+          obj = $5; 
+        } else {
+          obj = {}; 
+        }
+        obj[$2] = parseFloat($3); $$ = obj; /* [TODO] - check if float is in range && float overflow */
+       }
       | /* empty */
       ;
 
 DELEGATIONS: '[' HASH HASH ']' DELEGATIONS
-           { $$ = new yy.Node('DELEGATIONS','[', $2, $3, ']', $5) }
+           { $$ = [[$2,$3]].concat($5); }
            | /*empty*/
+           { $$ = []; }
            ;
 
-/* OPTIONS */
-
-O: '(' A '+' A ')' '&' '[' VOTING ']' O
- { $$ = new yy.Node('O','(', $2, '+', $4, ')', '&', '[' , $8, ']', $10) }
- | NUMBER '&' '[' VOTING ']' O
- { $$ = new yy.Node( 'O',$1, '&', '[', $4, ']', $6 ) }
- | /* empty */
- ;
-
-/* ORIGINAL GRAMMER */
-
-SA: A EOF
-  { $$ = new yy.Node('SA', $1); }
-  ;
-
-A: '(' A '+' A ')'
- { $$ = new yy.Node( 'A', '(', $2, '+', $4, ')' ); }
- | NUMBER
- { $$ = new yy.Node('A', $1); }
- | '[' O ']' '[' DELEGATIONS ']' /* EXTENDED */
-  { $$ = new yy.Node('A', '[', $2, ']', '[', $5, ']')}
- ;
 
 
 %%

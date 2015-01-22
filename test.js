@@ -5,17 +5,28 @@ Parser = require('jison').Parser;
 bnf = require('ebnf-parser');
 Lexer = require('jison-lex');
 chai = require('chai');
-require('src/rule.js');
 
-var grammar = fs.readFileSync('src/rlogParser.y','utf8');
+require('src/rule.js');
+Preparser = require('src/gramext.js');
+
+var grammar = fs.readFileSync('src/addGrammer.y','utf8');
 var content = fs.readFileSync('content.md','utf8');
 var content2 = fs.readFileSync('content2.md','utf8');
 
-parser = new Parser(grammar);
-lexer = new Lexer(grammar);
+
+
+g = Preparser.parse( grammar )
+// g = bnf.parse( grammar );
+
+parser = new Parser(g);
+lexer = new Lexer(g.lex);
 
 // AST Parser
 parser.yy.Node = Node;
+
+
+
+// console.log(JSON.stringify(g,false,2))
 
 
 
@@ -33,8 +44,11 @@ do{
 console.log('\nOUTPUT:'.green);
 
 var output = parser.parse(content);
-var output2 = parser.parse(content2);
+// var output2 = parser.parse(content2);
+console.log(output.toString())
+// console.log(output2.build())
+// var output2 = parser.parse(content2);
 
-output.seekDifference(output2);
+// output.seekDifference( output2 );
 
 // console.log(JSON.stringify(output,null,2));
