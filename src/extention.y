@@ -83,6 +83,7 @@ VOTING: '[' HASH FLOAT ']' VOTING
         } else {
           obj = {}; 
         }
+        if( obj[$2] ) throw new Error('multiple votes for one acteur are not allowed');
         obj[$2] = parseFloat($3); $$ = obj; /* [TODO] - check if float is in range && float overflow */
        }
       | /* empty */

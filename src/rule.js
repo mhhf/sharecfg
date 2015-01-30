@@ -1,4 +1,4 @@
-_ = require('underscore')._;
+_ = require('node_modules/underscore')._;
 require('debug');
 
 Node = function( name, args, opt ){
@@ -175,54 +175,172 @@ Node.prototype.getConsensString = function(  ){
 
 //
 // is the change made by addr to the current word valide?
+// 
+// change is valide iff a change is made and the change is a valide change by acteur with the addres addr and the valide transaction criteria
 //
 // @return: Bool
 //
-Node.prototype.seekDifference = function( to, addr ) {
-  if(to.toString() == this.toString()) return null;
-  var foundDifference = false;
+Node.prototype.validate = function( to, addr ) {
+  // instantiate global debugger
+  if( !Node.debuger ) Node.debuger = new Debuger(false);
   
-  debug( 1, 'looking in rule', this.name, this.isOptionSet?":Option Set":"");
+  // simmilar options are a valid change
+  if(to.toString() == this.toString()) return true;
+  
+  var valideChange = true;
+  var singleChange = false;
+  
+  Node.debuger.debug( 'looking in rule', this.name, this.isOptionSet?":Option Set":"");
+  Node.debuger.inc();
   
   if( this.isOptionSet ) {
     
     // look in options
     this.options.forEach( function( o, i ){
-      if( o.toString() != to.options[i].toString() ) { 
-        foundDifference = true;
-        o.seekDifference( to.options[i] );
+      if( !i in to.options ){
+      } else if( o.toString() != to.options[i].toString() ) { 
+        valideChange = valideChange && o.validate( to.options[i], addr );
       }
     });
     
+    // option is added
+    if( this.options.length < to.options.length ) {
+      for(var i = this.options.length - 1; i < to.options.length; i++ ) {
+        var valide = to.options[i].testNewOptionActor( addr );
+        valideChange = valideChange && valide;
+      }
+    }
+    
+    
     // look in delegations
     if( JSON.stringify(this.delegations) != JSON.stringify(to.delegations) ) {
-      debug(3, "found difference in deligations".green);
+      var valide = this.validateDelegations(this.delegations, to.delegations, addr );
+      valideChange = valideChange && valide;
+      Node.debuger.debug("DIFFERENCE: found", valide?'valide':'invalide',"difference in delegations");
     }
+  } else if( to.isOptionSet ) { // option is created
+    
+    Node.debuger.debug("Option Created:",to.toString());
+    var valide = to.testNewOptionActor( addr );
+    valideChange = valideChange && valide;
     
   } else if( this.isOption ) {
+    Node.debuger.debug('comparing Options', this.name, '<', this.toString(), '> <', to.toString(), '>' );
     // look in args
-    this.diffArgs( to );
+    valideChange = valideChange && this.diffArgs( to, addr );
     
+    Node.debuger.debug('comparing votes ',JSON.stringify(this.votes), JSON.stringify(to.votes) );
     // look in voting set
     if( JSON.stringify(this.votes) != JSON.stringify(to.votes) ) {
-      debug(3, "found difference in voting".green)
+      
+      var valide = this.validateVotes(this.votes, to.votes, addr);
+      
+      Node.debuger.debug("DIFFERENCE: found", valide?'valide':'invalide',"difference in voting");
+      valideChange = valide;
     }
   } else {
-    
-    this.diffArgs( to );
+    valideChange = valideChange && this.diffArgs( to, addr );
   }
+  
+
+  Node.debuger.dec();
+  
+  
+  return valideChange;
 
 }
 
-Node.prototype.diffArgs = function( to ){
+Node.prototype.testNewOptionActor = function( addr ){
+  var valide = true;
+    
+  Node.debuger.debug("Test Acteurs in new Option:", this.toString());
+  Node.debuger.inc();
+  if( this.isOption ) {
+    var keys = _.keys(this.votes);
+    valide = valide && keys.length == 0 || (keys.length == 1 && keys[0] == addr);
+    Node.debuger.debug("> votes", this.keys, addr, valide );
+  } else if(this.isOptionSet ){
+    var keys = _.map(this.delegations, function(d){ return d[0]; });
+    valide = valide && keys.length == 0 || (keys.length == 1 && keys[0] == addr);
+    
+    Node.debuger.debug("> delegations", this.keys, addr, valide );
+    
+    this.options.forEach( function(o){
+      valide = valide && o.testNewOptionActor( addr );
+    });
+  }
   
+  if( !this.isOptionSet ) {
+    this.args.forEach( function(a){
+      if( typeof a == 'object' ) {
+        valide = valide && a.testNewOptionActor( addr );
+      }
+    });
+  }
+  Node.debuger.dec();
+
+  // each nested
+  return valide;
+}
+
+Node.prototype.validateDelegations = function( del1, del2, addr){
+  var v1 = _.map( del1, function( v, k ){ return v.join(':'); });
+  var v2 = _.map( del2, function( v, k ){ return v.join(':'); });
+   
+  // get all addresses of manipulated votes
+  var diff = _.filter(_.union(v1, v2),function(e){ 
+    var inV1 = v1.indexOf(e) != -1;
+    var inV2 = v2.indexOf(e) != -1;
+    return !(inV1 && inV2);
+  }); // manipulated votes
+  
+  
+  // test if acteur only manipulated own votes
+  var valide = diff.reduce(function( m, e ){ 
+    return m 
+    && ( e.split(':')[0] == addr );
+  }, true);
+  
+  return valide;
+}
+
+Node.prototype.validateVotes = function( json1, json2, addr){
+  var v1 = _.map( json1, function( v, k ){ return k+':'+v; });
+  var v2 = _.map( json2, function( v, k ){ return k+':'+v; });
+   
+  // get all addresses of manipulated votes
+  var diff = _.filter(_.union(v1, v2),function(e){ 
+    var inV1 = v1.indexOf(e) != -1;
+    var inV2 = v2.indexOf(e) != -1;
+    return !(inV1 && inV2);
+  }); // manipulated votes
+  
+  
+  // test if acteur only manipulated own votes
+  var valide = diff.reduce(function( m, e ){ 
+    return m 
+    && ( e.split(':')[0] == addr );
+  }, true);
+  
+  return valide;
+}
+
+Node.prototype.diffArgs = function( to, addr ){
+  
+  var valideChange = true;
+  Node.debuger.debug('looking in', this.args.length,'args:', this.args.join(','))
+  
+    Node.debuger.inc();
   _.each( this.args, function(r,i) { 
-    debug( 2, 'looking in', typeof r, r )
+    Node.debuger.debug( 'looking in', typeof r, r )
     
     
     if( typeof r == 'object' && r.name ) {
-      r.seekDifference( to.args[i] ); 
+      valideChange = valideChange && r.validate( to.args[i], addr ); 
     }
   });
+  Node.debuger.dec();
+  
+  return valideChange;
   
 }

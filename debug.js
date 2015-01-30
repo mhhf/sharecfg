@@ -7,6 +7,34 @@ indent = function( j ){
   return ind;
 }
 
+Debuger.instance;
+Debuger = function( active ){
+  if(Debuger.instance) { return Debuger.instance; }
+  this.lvl = 0;
+  this.active = active
+  console.log(this.lvl);
+  
+  this.inc = function(){
+    this.lvl += 1;
+  };
+  
+  this.dec = function(){
+    this.lvl -= 1;
+  };
+  
+  this.set = function(lvl){
+    this.lvl = lvl;
+  };
+
+  this.debug = function(){
+    if(!this.active) return null;
+    var args = [].splice.call(arguments,0);
+    debug.apply(this, [this.lvl].concat(args) )
+  };
+  
+  Debuger.instance = this;
+}
+
 depth = 1;
 debug = function( lvl ){
   
