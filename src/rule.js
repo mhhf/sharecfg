@@ -87,7 +87,11 @@ Node.prototype.mapArguments = function(){
 }
 
 Node.prototype.mapVotes = function(){
-  var voteMap = _.map(this.votes, function( v,k ){ return "["+k+" "+v+"]" });
+  var voteMap = _.map(this.votes, function( v,k ){ 
+    vote = v.toString();
+    if( vote.indexOf('.') == -1 ) vote += '.0';
+    return "["+k+" "+vote+"]" 
+  });
   return voteMap.join(' ');
 }
 
@@ -169,11 +173,14 @@ Node.prototype.getConsensString = function(  ){
   return red;
 }
 
-Node.prototype.seekDifference = function( to ) {
+//
+// is the change made by addr to the current word valide?
+//
+// @return: Bool
+//
+Node.prototype.seekDifference = function( to, addr ) {
   if(to.toString() == this.toString()) return null;
   var foundDifference = false;
-  
-    
   
   debug( 1, 'looking in rule', this.name, this.isOptionSet?":Option Set":"");
   
@@ -204,10 +211,6 @@ Node.prototype.seekDifference = function( to ) {
     
     this.diffArgs( to );
   }
-  
-  
-
-  
 
 }
 

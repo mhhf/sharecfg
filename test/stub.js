@@ -6,111 +6,67 @@ chai = require('chai');
 
 var should = require('chai').should()
 
+require('src/rule.js');
+Preparser = require('src/gramext.js');
 
-describe('slide Parser', function(){
+// describe('Grammar', function(){
+//   it('bla', function(){
+//     bla
+//   });
+// })
 
-	// Load the grammer file and parse the parser
-  before( function(done){
-    var grammar = fs.readFileSync('src/llmdParser.y','utf8');
-    parser = new Parser(grammar);
-    done();
-	});
 
-	it('should ectract --- lines', function() {
-		parser.parse('slide1---\nstill slide 1').should.have.length(1);
-		parser.parse('slide1\n ---\nstill slide 1').should.have.length(1);
-		parser.parse('slide1').should.have.length(1);
-		parser.parse('slide1\n---\nslide2').should.have.length(2);
-		parser.parse('slide1\n---\nslide2\n---\nslide3').length.should.equal(3);
-	});
-
-  it('should ignore chars after "---" ', function() {
-		parser.parse('slide1\n---   \nslide2').length.should.equal(2);
-		parser.parse('slide1\n---   this should be ignored\nslide2').should.deep.equal(
-       [{ from: 1, to: 2, md:[  'slide1' ], notes:[] }, { from: 3, to: 3, md:[  'slide2' ], notes:[] }]
-      );
-  });
-
-  it('should ignore chars after "???" ', function() {
-		parser.parse('slide1\n???   \nnotes2').length.should.equal(1);
-		parser.parse('slide1\n???   this should be ignored\nnotes1').should.deep.equal(
-       [{ from: 1, to: 3, md:[  'slide1' ], notes: ['notes1'] }]
-      );
-    parser.parse('slide1\n???').should.deep.equal(
-        [{ from:1, to: 2, md:[  'slide1' ], notes:[] }]
-      );
-    parser.parse('slide1\n??? da fuck is this?').should.deep.equal(
-        [{ from:1, to: 2, md:[  'slide1' ], notes:[] }]
-      );
-  });
-
-  it('should extract notes split with the "???" seperator', function() {
-		parser.parse('slide1???\nstill slide 1')[0].should.have
-      .property('notes')
-      .and.have.length(0);
-		parser.parse('slide1\n ???\nstill slide 1')[0].should.have
-      .property('notes')
-      .and.have.length(0);
-		parser.parse('slide1\n???\nnotes')[0].should.have
-      .property('notes')
-      .and.deep.equal(['notes']);
-  });
-
-  it('should ignore "---" and "???" in codelines', function() {
-		parser.parse('slide\n```\n???\n```\n???\nnotes').should.deep.equal([
-      { from: 1, to: 6, md:[  'slide\n```\n???\n```' ], notes: ['notes'] } 
-    ]);
-		parser.parse('slide\n```\n---\n```\n???\nnotes').should.deep.equal([
-      { from: 1, to: 6, md:[  'slide\n```\n---\n```' ], notes: ['notes'] } 
-    ]);
+describe('word change validator', function(){
+  
+  beforeEach(function(){
+    
+    grammar = fs.readFileSync('src/addGrammer.y','utf8');
+    g = Preparser.parse( grammar )
+    parser = new Parser(g);
+    parser.yy.Node = Node;
+    content = "[[0x00 10] [0x01 20] [0x02 10] [0x03 5]] [( 1 + [1 &[[0x00 1.0]] 2 &[[0x01 0.6]]] [[0x03 0x00] [0x02 0x01]] ) &[] ] [[0x03 0x02]]";
+    
   });
   
-  it('should extract package', function() {
+  it('should compile', function(){
+    var ast = parser.parse(content);
     
-    parser.parse('slide\n{{\npackageName  {\nbla:{a:\'blubb\'}\n}}}\n???\nnotes').should.deep.equal([
-      { from: 1, to: 7, md:[ 'slide\n', {type:'package', name: "packageName", data:'  {\nbla:{a:\'blubb\'}\n}'} ], notes: ['notes'] } 
-    ]);
-    
-    parser.parse('slide\n{{\npackageName  {\nbla:\'blubb\'\n}}}\n???\nnotes').should.deep.equal([
-      { from: 1, to: 7, md:[ 'slide\n', {type:'package', name: "packageName", data:'  {\nbla:\'blubb\'\n}'} ], notes: ['notes'] } 
-    ]);
-    
-    parser.parse('slide\n{{\npackageName  {\nbla:\'blubb\'\n}\n}}\n???\nnotes').should.deep.equal([
-      { from: 1, to: 8, md:[ 'slide\n', {type:'package', name: "packageName", data:'  {\nbla:\'blubb\'\n}\n'} ], notes: ['notes'] } 
-    ]);
-    
-    parser.parse('slide\n{{\npackageName{\nbla:\'blubb\'\n}\n}}\n???\nnotes').should.deep.equal([
-      { from: 1, to: 8, md:[ 'slide\n', {type:'package', name: "packageName", data:'{\nbla:\'blubb\'\n}\n'} ], notes: ['notes'] } 
-    ]);
-    
-    parser.parse('slide\n{{\npackageName\n{\nbla:\'blubb\'\n}\n}}\n???\nnotes').should.deep.equal([
-      { from: 1, to: 9, md:[ 'slide\n', {type:'package', name: "packageName", data:'\n{\nbla:\'blubb\'\n}\n'} ], notes: ['notes'] } 
-    ]);
-    
-    parser.parse('slide\n{{packageName\n{\nbla:\'blubb\'\n}\n}}\n???\nnotes').should.deep.equal([
-      { from: 1, to: 8, md:[ 'slide\n', {type:'package', name: "packageName", data:'\n{\nbla:\'blubb\'\n}\n'} ], notes: ['notes'] } 
-    ]);
+    ast.toString().should.equal(content)
   });
   
-  it('should ignore [] brackets', function(){
+  it('should accept submit voting by correct actor', function(){
+    addr = "0x01"
+    content2 = "[[0x00 10] [0x01 20] [0x02 10] [0x03 5]] [( 1 + [1 &[[0x00 1.0] [0x01 0.1]] 2 &[[0x01 0.6]]] [[0x03 0x00] [0x02 0x01]] ) &[] ] [[0x03 0x02]]";
     
-    parser.parse('{{multipleChoice {\n"questions": [\n{"question": true }\n]\n}}}').should.deep.equal([
-      { from: 1, to: 5, md:[ {type:'package', name: "multipleChoice", data:' {\n"questions": [\n{"question": true }\n]\n}'} ], notes: [] } 
-    ]);
-  })
-
-
-})
-
-
-describe('slide Parser', function(){
+    var ast = parser.parse(content);
+    var isValid = ast.validate( content2, addr );
+    isValid.should.be.True;
+  });
   
+  it('should decline submit voting by wrong actor', function(){
+    addr = "0x00"
+    content2 = "[[0x00 10] [0x01 20] [0x02 10] [0x03 5]] [( 1 + [1 &[[0x00 1.0] [0x01 0.1]] 2 &[[0x01 0.6]]] [[0x03 0x00] [0x02 0x01]] ) &[] ] [[0x03 0x02]]";
+    
+    var ast = parser.parse(content);
+    var isValid = ast.validate( content2, addr );
+    isValid.should.be.False;
+  });
   
+  // test multiple changes
+  // test no changes
+  // test invalid changes
+
+  // test voting update of acteur
+  // test voting update of other actor
+  // test multiple voting updates
+  // test voting removal
   
+  // test delegation of actor
+  // test delegation of other actor
+  // test multiple delegations
+  // test delegation removal
+  
+  // test option extention
+  // test option creation
+  	
 });
-
-var test = function( name ){
-	var test   = fs.readFileSync('./test/tests/'+name+'.md','utf8');
-	var result = fs.readFileSync('./test/tests/'+name+'.out','utf8');
-	parser.parse(test).should.equal(result);
-}

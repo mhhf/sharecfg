@@ -34,3 +34,4 @@ var output = parser.parse(content);
 var output2 = parser.parse(content2);
  
 output.seekDifference( output2 );
+
