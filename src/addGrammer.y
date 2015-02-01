@@ -1,6 +1,3 @@
-%{
- this.yy.a = {};
-%}
 /* description: Parses end executes mathematical expressions. */
 
 /* lexical grammar */

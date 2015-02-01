@@ -275,22 +275,60 @@ describe('word change validator', function(){
 
 describe('w+mw', function() {
   
-  it('should create a valid word', function(){
+  it('should create an option set', function(){
     
     var d = new Debuger();
     d.active = true;
     
-    grammar = fs.readFileSync('src/addGrammer.y','utf8');
+    grammar = fs.readFileSync('abcGrammer.y','utf8');
     g = Preparser.parse( grammar )
     parser = new Parser(g);
     parser.yy.Node = Node;
-    content = "[[0x00 10] [0x01 20] [0x02 10] [0x03 5]] [( 1 + [1 &[[0x00 1.0]] 2 &[[0x01 0.6]]] [[0x03 0x00] [0x02 0x01]] ) &[] ] [[0x03 0x02]]";
+    content = "[[0x00 10] [0x01 20] [0x02 10] [0x03 5]] [a a b b &[] ] [[0x03 0x02]]";
     
     var ast = parser.parse(content);
-    ast.add( '( 3 + 2 )', parser );
+    ast.add( 'aaabb', parser );
     var string = ast.toString();
-    string.should.equal( "[[0x00 10] [0x01 20] [0x02 10] [0x03 5]] [( [1 &[] 3 &[]] [] + [1 &[[0x00 1.0]] 2 &[[0x01 0.6]]] [[0x03 0x00] [0x02 0x01]] ) &[] ] [[0x03 0x02]]" );
+    string.should.equal( "[[0x00 10] [0x01 20] [0x02 10] [0x03 5]] [a a [b b &[] a b b &[]] [] &[] ] [[0x03 0x02]]" );
     
   });
+  
+
+  // it('should extend an option set', function(){
+  //   
+  //   var d = new Debuger();
+  //   d.active = true;
+  //   
+  //   grammar = fs.readFileSync('abcGrammer.y','utf8');
+  //   g = Preparser.parse( grammar )
+  //   parser = new Parser(g);
+  //   parser.yy.Node = Node;
+  //   content = "[[0x00 10] [0x01 20] [0x02 10] [0x03 5]] [a a [b b &[]] [] &[] ] [[0x03 0x02]]";
+  //   
+  //   var ast = parser.parse(content);
+  //   ast.add( 'aaabb', parser );
+  //   var string = ast.toString();
+  //   string.should.equal( "[[0x00 10] [0x01 20] [0x02 10] [0x03 5]] [a a [b b &[] a b b &[]] [] &[] ] [[0x03 0x02]]" );
+  //   
+  // });
+  
+
+  // it('should create a nested option set', function(){
+  //   
+  //   var d = new Debuger();
+  //   d.active = true;
+  //   
+  //   grammar = fs.readFileSync('abcGrammer.y','utf8');
+  //   g = Preparser.parse( grammar )
+  //   parser = new Parser(g);
+  //   parser.yy.Node = Node;
+  //   content = "[[0x00 10] [0x01 20] [0x02 10] [0x03 5]] [a a [b b &[] a b b &[]] [] &[] ] [[0x03 0x02]]";
+  //   
+  //   var ast = parser.parse(content);
+  //   ast.add( 'aaabb', parser );
+  //   var string = ast.toString();
+  //   string.should.equal( "[[0x00 10] [0x01 20] [0x02 10] [0x03 5]] [a a [b b &[] a [b b &[] a b b &[]][] &[]] [] &[] ] [[0x03 0x02]]" );
+  //   
+  // });
   
 });

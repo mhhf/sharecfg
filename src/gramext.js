@@ -45,7 +45,7 @@ exports.parse = function( originalGrammarBNF ){
       
       return [ 
         rule,
-        "$$ = new yy.Node( \""+k+"\", ["+s.join(',')+"], {rule:\""+s.join(' ')+"\"} );"
+        "$$ = new yy.Node( \""+k+"\", ["+s.join(',')+"], {rule:\""+rule+"\"} );"
       ];
       
     });

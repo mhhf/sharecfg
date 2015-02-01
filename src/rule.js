@@ -379,7 +379,7 @@ Node.prototype.merge = function( node ){
       '<', node.name, '=', node.rule, '>' );
   
   mergeArgs = function ( node1, node2 ) {
-    Node.debuger.debug('Merging Args', node1.args, node2.args );
+    Node.debuger.debug('Merging Args <', node1.args.join(',') ,'> <', node2.args.join(','),'>' );
     
     node1.args.forEach( function( a1, i ){
       var a2 = node2.args[i];
@@ -418,8 +418,14 @@ Node.prototype.merge = function( node ){
         Node.debuger.debug( 'OPTION FOUND', o.toString(), node.toString() );
       }
     });
+  } else if( this.name == node.name && this.rule != node.rule ) {
+    if( this.isOptionSet ) {
+      Node.debuger.debug("EXTEND OPTION SET");
+    } else {
+      Node.debuger.debug("CREATE OPTION SET");
+    }
   } else {
-    console.log("UNHANDLED");
+    Node.debuger.debug("UNHANDLED");
   }
   
   Node.debuger.dec();
