@@ -1,5 +1,5 @@
 _ = require('node_modules/underscore')._;
-require('debug');
+require('./debug.js');
 
 Node = function( name, args, opt ){
   /* var vals = _.values(arguments); */
@@ -8,6 +8,7 @@ Node = function( name, args, opt ){
   // if(name == "ACTEURS")
   this.args = args;
   // this.action = action;
+  if(opt && opt.rule) this.rule = opt.rule;
   
   // flags
   this.isOptionSet = !!(opt && opt.optionSet);
@@ -343,4 +344,83 @@ Node.prototype.diffArgs = function( to, addr ){
   
   return valideChange;
   
+}
+
+// adding a w\in L(G) to this metaword
+Node.prototype.add = function( w, parser ){
+  
+  if( this.name == 'SSA' ) {
+    aMap = _.map(this.acteurs, function( v,k ){ return "["+k+" "+v+"]" });
+  }
+  
+  var string = "[" + aMap.reverse().join(' ') + "] [" + w + "&[] ] [" + this.mapDelegations() + "]";
+  
+  var ast_ = parser.parse(string);
+  this.addAST( ast_ );
+  console.log( ast_.toString() );
+  
+}
+
+Node.prototype.addAST = function( ast ){
+  if( this.name == 'SSA' && ast.name == "SSA" ) {
+    this.args[4].forEach( function( o, i ){
+      if( o.rule == ast.args[4][0].rule ) {
+        o.merge( ast.args[4][0] );
+      }
+    });
+  }
+}
+
+Node.prototype.merge = function( node ){
+  Node.debuger.inc();
+  // Node.debuger.debug(JSON.stringify(this,false,2))
+  Node.debuger.debug('Merging Rules',
+      '<', this.name, '=', this.rule, '>',
+      '<', node.name, '=', node.rule, '>' );
+  
+  mergeArgs = function ( node1, node2 ) {
+    Node.debuger.debug('Merging Args', node1.args, node2.args );
+    
+    node1.args.forEach( function( a1, i ){
+      var a2 = node2.args[i];
+      if( typeof a1 == 'object' ) {
+        a1.merge( a2 );
+      } else if ( typeof a1 == 'string' ){
+        if( a1 != a2 ) {
+          Node.debuger.debug('CREATE Option', a1, a2 );
+        } else {
+          Node.debuger.debug('MATCH', a1, a2 );
+        }
+      }
+    });
+  }
+  
+  if( this.name == node.name && this.rule == node.rule ) {
+    
+    if( this.isOptionSet ) {
+      Node.debuger.debug('OPTION SET');
+    } else if( this.isOption ){ 
+      Node.debuger.debug('OPTION', this.args );
+      Node.debuger.debug('OPTION', node.args );
+      
+      mergeArgs( this, node );
+    } else {
+      // MERGE RULE
+      mergeArgs( this, node );
+    }
+    
+    // console.log( this, node );
+  } else if( this.isOptionSet ) {
+    Node.debuger.debug( 'OPTION SET' );
+    this.options.forEach( function( o, i ){
+      if( o.rule == node.rule ) {
+        // [TODO] - find right option to continue merging or extend option set
+        Node.debuger.debug( 'OPTION FOUND', o.toString(), node.toString() );
+      }
+    });
+  } else {
+    console.log("UNHANDLED");
+  }
+  
+  Node.debuger.dec();
 }

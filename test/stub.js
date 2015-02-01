@@ -272,3 +272,25 @@ describe('word change validator', function(){
 
   	
 });
+
+describe('w+mw', function() {
+  
+  it('should create a valid word', function(){
+    
+    var d = new Debuger();
+    d.active = true;
+    
+    grammar = fs.readFileSync('src/addGrammer.y','utf8');
+    g = Preparser.parse( grammar )
+    parser = new Parser(g);
+    parser.yy.Node = Node;
+    content = "[[0x00 10] [0x01 20] [0x02 10] [0x03 5]] [( 1 + [1 &[[0x00 1.0]] 2 &[[0x01 0.6]]] [[0x03 0x00] [0x02 0x01]] ) &[] ] [[0x03 0x02]]";
+    
+    var ast = parser.parse(content);
+    ast.add( '( 3 + 2 )', parser );
+    var string = ast.toString();
+    string.should.equal( "[[0x00 10] [0x01 20] [0x02 10] [0x03 5]] [( [1 &[] 3 &[]] [] + [1 &[[0x00 1.0]] 2 &[[0x01 0.6]]] [[0x03 0x00] [0x02 0x01]] ) &[] ] [[0x03 0x02]]" );
+    
+  });
+  
+});

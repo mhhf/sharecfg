@@ -7,7 +7,6 @@ indent = function( j ){
   return ind;
 }
 
-Debuger.instance;
 Debuger = function( active ){
   if(Debuger.instance) { return Debuger.instance; }
   this.lvl = 0;
@@ -34,6 +33,8 @@ Debuger = function( active ){
   
   Debuger.instance = this;
 }
+
+Debuger.instance;
 
 depth = 1;
 debug = function( lvl ){

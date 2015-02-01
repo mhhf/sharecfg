@@ -3,8 +3,7 @@ require('underscore')
 fs = require('fs');
 bnf = require('ebnf-parser');
 
-
-var grammar = fs.readFileSync('src/extention.y','utf8');
+var grammar = fs.readFileSync(__dirname+'/extention.y','utf8');
 
 // BNF garammar extention
 exports.parse = function( originalGrammarBNF ){
@@ -39,7 +38,7 @@ exports.parse = function( originalGrammarBNF ){
         });
         action = r[1].replace(/\n/g,'');
         // [TODO] - escape "
-        a = "$$ = new yy.Node( \""+k+"\", ["+s.join(',')+"], \""+action+"\" );";
+        a = "$$ = new yy.Node( \""+k+"\", ["+s.join(',')+"], {rule:\""+r[0]+"\"} );";
         r[1] = a;
       }
     })
@@ -53,7 +52,6 @@ exports.parse = function( originalGrammarBNF ){
   _.each( origGrammarJSON.bnf, function( v, k ){
     // Extend Option Rule
     // 
-
     argNum = function(args){
       s = args.split(' ');
       s = _.map(s, function( v, k ){
@@ -64,21 +62,28 @@ exports.parse = function( originalGrammarBNF ){
 
     optionSet["O_" + k] = [];
     v.forEach(function(v2){
+      
+      
       if( typeof v2 == "object" ) {
         o = _.clone(v2);
         args = argNum(o[0]);
+        oldRule = o[0];
         o[0] = o[0] + " " + optSuffix + " " + "O_" + k ; 
         var optPos = o[0].split(' ').length;
-        o[1] = " $$ = [new yy.Node('O_"+k+"', ["+args+"], {votes:$"+(optPos-2)+"})].concat($"+optPos+");";
+        o[1] = " $$ = [new yy.Node('O_"+k+"', ["+args+"], {votes:$"+(optPos-2)+", rule:\"" + oldRule + "\"})].concat($"+optPos+");";
         
         o2 = _.clone(v2);
         o2[0] = o2[0] + " " + optSuffix; 
-        o2[1] = " $$ = [new yy.Node('O_"+k+"', ["+args+"], {votes:$"+(optPos-2)+"} )];";
+        o2[1] = " $$ = [new yy.Node('O_"+k+"', ["+args+"], {votes:$"+(optPos-2)+", rule:\"" + oldRule + "\"} )];";
         
         optionSet["O_" + k].push( o )
         optionSet["O_" + k].push( o2 )
       } else {
-        optionSet["O_" + k].push( [ optSuffix + " O_" + k, "" ] )
+        var optPos = v2.split(' ').length;
+        optionSet["O_" + k].push( [ 
+          v2 + " " + optSuffix + " O_" + k,
+          " $$ = [new yy.Node('O_" + k + "', [" + argNum(v2) + "], {votes:$" + ( optPos + 3 ) + ", rule:\"" + v2 + "\"} )];"
+          ] );
       }
     });
     // optionSet["O_" + k].push( "" )
