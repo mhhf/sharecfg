@@ -20,7 +20,7 @@ content2 = "aa";
  
 
 g = Preparser.parse( grammar );
-console.log( JSON.stringify(g.bnf, false, 2) );
+// console.log( JSON.stringify(g.bnf, false, 2) );
 
 // g = bnf.parse( grammar );
 // g = bnf.parse( grammar );

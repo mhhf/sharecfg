@@ -29,19 +29,42 @@ exports.parse = function( originalGrammarBNF ){
   // replace actions to construct an ast
   _.each( origGrammarJSON.bnf, function( v, k ){
     // each case
-    v.forEach(function(r){
-      // remove - not neccecerry any more
-      if( typeof r == "object" && k != 'SSA' && k != 'ACTEURS' && k != 'VOTING' && k != 'DELEGATIONS' && !k.match(/^O_/) ) {
+    // 
+
+    origGrammarJSON.bnf[k] = _.map(v, function(r){
+      if( typeof r == 'object' ) {
         s = r[0].split(' ');
-        s = _.map(s, function( v, k ){
-          return '$' + (k+1);
-        });
-        action = r[1].replace(/\n/g,'');
-        // [TODO] - escape "
-        a = "$$ = new yy.Node( \""+k+"\", ["+s.join(',')+"], {rule:\""+r[0]+"\"} );";
-        r[1] = a;
+      } else if (typeof r == 'string' ) {
+        s = r.split(' ');
       }
-    })
+      var rule = s.join(' ');
+      
+      s = _.map(s, function( v, k ){
+        return '$' + (k+1);
+      });
+      
+      return [ 
+        rule,
+        "$$ = new yy.Node( \""+k+"\", ["+s.join(',')+"], {rule:\""+s.join(' ')+"\"} );"
+      ];
+      
+    });
+
+    // v.forEach(function(r){
+    //   // remove - not neccecerry any more
+    //   if( typeof r == "object" && k != 'SSA' && k != 'ACTEURS' && k != 'VOTING' && k != 'DELEGATIONS' && !k.match(/^O_/) ) {
+    //     s = r[0].split(' ');
+    //     s = _.map(s, function( v, k ){
+    //       return '$' + (k+1);
+    //     });
+    //     // action = r[1].replace(/\n/g,'');
+    //     // [TODO] - escape "
+    //     a = "$$ = new yy.Node( \""+k+"\", ["+s.join(',')+"], {rule:\""+r[0]+"\"} );";
+    //     r[1] = a;
+    //   } else if(  ) {
+    //   
+    //   }
+    // })
     
   });
 
@@ -63,7 +86,6 @@ exports.parse = function( originalGrammarBNF ){
     optionSet["O_" + k] = [];
     v.forEach(function(v2){
       
-      
       if( typeof v2 == "object" ) {
         o = _.clone(v2);
         args = argNum(o[0]);
@@ -80,10 +102,19 @@ exports.parse = function( originalGrammarBNF ){
         optionSet["O_" + k].push( o2 )
       } else {
         var optPos = v2.split(' ').length;
+        
+        if( v2 != "" ) {
+          optionSet["O_" + k].push( [ 
+            v2 + " " + optSuffix + " O_" + k,
+            " $$ = [new yy.Node('O_" + k + "', [" + argNum(v2) + "], {votes:$" + ( optPos + 2 ) + ", rule:\"" + v2 + "\"} )];"
+            ] );
+        }
+        
         optionSet["O_" + k].push( [ 
-          v2 + " " + optSuffix + " O_" + k,
-          " $$ = [new yy.Node('O_" + k + "', [" + argNum(v2) + "], {votes:$" + ( optPos + 3 ) + ", rule:\"" + v2 + "\"} )];"
+          v2 + (v2==""?"":" ") + optSuffix,
+          " $$ = [new yy.Node('O_" + k + "', [" + argNum(v2) + "], {votes:$" + ( optPos + 2 ) + ", rule:\"" + v2 + "\"} )];"
           ] );
+        
       }
     });
     // optionSet["O_" + k].push( "" )
@@ -102,7 +133,6 @@ exports.parse = function( originalGrammarBNF ){
   // TODO: reference old Start function
   
   
-  // console.log(JSON.stringify( origGrammarJSON, false, 2 ))
   
   return origGrammarJSON;
 
