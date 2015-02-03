@@ -5,6 +5,7 @@ Node = function( name, args, opt ){
   /* var vals = _.values(arguments); */
   
   this.name = name;
+  this.rulename = name;
   // if(name == "ACTEURS")
   this.args = args;
   // this.action = action;
@@ -16,6 +17,7 @@ Node = function( name, args, opt ){
    
   // [TODO] - WARNING: COLLISION WITH ORIGINAL GRAMMER
   this.isOption = !!name.match(/^O_/);
+  if( this.isOption ) this.rulename = this.name.slice(2)
   
   // inherented
   this.acteurs = {};
@@ -357,7 +359,7 @@ Node.prototype.add = function( w, parser ){
   
   var ast_ = parser.parse(string);
   this.addAST( ast_ );
-  console.log( ast_.toString() );
+  // console.log( ast_.toString() );
   
 }
 
@@ -395,7 +397,7 @@ Node.prototype.merge = function( node ){
     });
   }
   
-  if( this.name == node.name && this.rule == node.rule ) {
+  if( this.rulename == node.rulename && this.rule == node.rule ) {
     
     if( this.isOptionSet ) {
       Node.debuger.debug('OPTION SET');
@@ -412,18 +414,38 @@ Node.prototype.merge = function( node ){
     // console.log( this, node );
   } else if( this.isOptionSet ) {
     Node.debuger.debug( 'OPTION SET' );
+    var foundRule = false;
+    
+    // look for each option if current rule is al
     this.options.forEach( function( o, i ){
+      Node.debuger.debug( 'RULE', o.rule );
       if( o.rule == node.rule ) {
+        foundRule = true;
         // [TODO] - find right option to continue merging or extend option set
-        Node.debuger.debug( 'OPTION FOUND', o.toString(), node.toString() );
+        o.merge( node )
+        // Node.debuger.debug( 'OPTION FOUND', o.toString(), node.toString() );
       }
     });
-  } else if( this.name == node.name && this.rule != node.rule ) {
-    if( this.isOptionSet ) {
-      Node.debuger.debug("EXTEND OPTION SET");
-    } else {
-      Node.debuger.debug("CREATE OPTION SET");
+    
+    // if rule is not found, add the new option to the option set
+    if( !foundRule ) {
+      node.isOption = true;
+      this.options.push(node);
     }
+    
+  } else if( this.rulename == node.rulename && this.rule != node.rule ) {
+    if( this.isOption ) Node.debuger.debug("Unhandled Option creation in an Option, possible crash with node name");
+    
+    node.isOption = true;
+    node.name = "O_" + node.name;
+    
+    var o1 = new Node( "O_"+this.rulename, this.args, { votes: this.votes, rule: this.rule } );
+    
+    this.rule = '';
+    this.isOptionSet = true;
+    this.options = [ o1, node ]; 
+    this.args = [ '[', this.options, ']' ]
+    Node.debuger.debug("create option set", this.toString());
   } else {
     Node.debuger.debug("UNHANDLED");
   }
