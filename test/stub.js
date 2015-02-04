@@ -309,9 +309,6 @@ describe('w+mw', function() {
 
   it('should create a nested option set', function(){
     
-    var d = new Debuger();
-    d.active = true;
-    
     grammar = fs.readFileSync('abcGrammer.y','utf8');
     g = Preparser.parse( grammar )
     parser = new Parser(g);
@@ -321,9 +318,12 @@ describe('w+mw', function() {
     var ast = parser.parse(content);
     ast.add( 'aaaabb', parser );
     var string = ast.toString();
-    console.log(string);
     string.should.equal( "[[0x00 10] [0x01 20] [0x02 10] [0x03 5]] [a a [b b &[] a [b b &[] a b b &[]] [] &[]] [] &[] ] [[0x03 0x02]]" );
     
   });
+  
+
+  // [TODO] - vote inherencements
+  // [TODO] - reject manipulation of acteurs
   
 });

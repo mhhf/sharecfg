@@ -24,9 +24,9 @@ H                          [0-9a-f]
 
 0x{H}+                     return 'HASH'
 \d+\.\d                    return 'FLOAT'
+[\d]+                      return 'NUMBER'
 '['                        return '['
 ']'                        return ']'
-';'                        return ';'
 '&'                        return '&'
 
 
@@ -50,7 +50,7 @@ SSA: '[' ACTEURS ']' SA
    ;
 */
 
-SSA: '[' ACTEURS ']' '[' O_SA ']' '[' DELEGATIONS ']'
+SSA: '[' ACTEURS ']' '[' START ']' '[' DELEGATIONS ']'
    { 
     var node = new yy.Node('SSA',[ '[', $2, ']', '[', $5, ']', '[', $8, ']' ], {delegations: $8});
     node.build();

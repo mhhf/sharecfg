@@ -23,7 +23,7 @@
 '('                        return '('
 ')'                        return ')'
 '+'                        return '+'
-[\d]+                      return 'NUMBER'
+[\d]+                      return 'NUM'
 <<EOF>>                    return 'EOF'
 
 
@@ -47,7 +47,7 @@ SA: A
 
 A: '(' A '+' A ')'
  { $$ = $2 + $4; }
- | NUMBER
+ | NUM
  { $$ = parseInt($1); }
  ;
 

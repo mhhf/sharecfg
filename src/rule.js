@@ -1,4 +1,6 @@
-_ = require('node_modules/underscore')._;
+// [TODO] - get all candidates and their normalized votes
+
+_ = require('underscore')._;
 require('./debug.js');
 
 Node = function( name, args, opt ){
@@ -21,16 +23,16 @@ Node = function( name, args, opt ){
   
   // inherented
   this.acteurs = {};
-  this.delegations = opt && opt.delegations || [];
-  this._delegations = opt && opt.delegations || [];
+  this.delegations = opt && opt.delegations ||[];
+  this._delegations = opt && opt.delegations ||[];
   
   // sythesize
-  this.votes = opt && opt.votes || {};
+  this.votes = opt && opt.votes ||{};
 
 }
 
 Node.prototype.build = function(){
-  if( this.name == "SSA" ) {
+  if( this.name == "SSA" ) {
     this.acteurs = this.args[1];
     var self = this;
     this.args[4].forEach(function(o){
@@ -42,7 +44,7 @@ Node.prototype.build = function(){
   } else {
     if( this.isOption ) {
       
-      for(var i=0; i<this.args.length; i++ ) {
+      for(var i=0; i<this.args.length; i++ ) {
         if( typeof this.args[i] == 'object' ) {
           this.args[i].inherit( this.acteurs, this._delegations );
         }
@@ -55,7 +57,7 @@ Node.prototype.build = function(){
       });
       
     } else { // simple rule 
-      for(var i=0; i<this.args.length; i++ ) {
+      for(var i=0; i<this.args.length; i++ ) {
         if( typeof this.args[i] == 'object' ) {
           this.args[i].inherit( this.acteurs, this._delegations );
         }
@@ -135,7 +137,7 @@ Node.prototype.getConsensString = function(  ){
       var map = _.clone(o.votes);
       // TODO: Compute transitive Hull
       o.delegations.forEach(function(d){
-        if( !map[d[0]] ) { // der akteur hat noch nicht abgestimmt
+        if( !map[d[0]] ) { // der akteur hat noch nicht abgestimmt
           if( map[d[1]] ) { // der delegant hat abgestimmt
             map[d[0]] = map[d[1]]
           }
@@ -148,7 +150,7 @@ Node.prototype.getConsensString = function(  ){
       var score = map.reduce(function(m, x){ return x + m; },0);
       // console.log(score, o.getConsensString());
       
-      if( !kand || maxScore < score ) {
+      if( !kand || maxScore < score ) {
         maxScore = score;
         kand = o.getConsensString(); 
       }
@@ -158,7 +160,7 @@ Node.prototype.getConsensString = function(  ){
   } else if ( this.isOption ) {
     
     var map = _.map( this.args, function(a){ 
-      var ret = typeof a == 'object' && a.getConsensString() || a && a.toString() || ""; 
+      var ret = typeof a == 'object' && a.getConsensString() || a && a.toString() || ""; 
       return ret;
     });
   
@@ -166,7 +168,7 @@ Node.prototype.getConsensString = function(  ){
     var red = map.reduce( function(ss,s){ return ss+' '+s; }, '' );
   } else {
     var map = _.map( this.args, function(a){ 
-      var ret = typeof a == 'object' && a.getConsensString() || a && a.toString() || ""; 
+      var ret = typeof a == 'object' && a.getConsensString() || a && a.toString() || ""; 
       return ret;
     });
   
@@ -185,7 +187,6 @@ Node.prototype.getConsensString = function(  ){
 //
 Node.prototype.validate = function( to, addr ) {
   // instantiate global debugger
-  if( !Node.debuger ) Node.debuger = new Debuger(false);
   
   // simmilar options are a valid change
   if(to.toString() == this.toString()) return true;
@@ -193,8 +194,6 @@ Node.prototype.validate = function( to, addr ) {
   var valideChange = true;
   var singleChange = false;
   
-  Node.debuger.debug( 'looking in rule', this.name, this.isOptionSet?":Option Set":"");
-  Node.debuger.inc();
   
   if( this.isOptionSet ) {
     
@@ -219,26 +218,21 @@ Node.prototype.validate = function( to, addr ) {
     if( JSON.stringify(this.delegations) != JSON.stringify(to.delegations) ) {
       var valide = this.validateDelegations(this.delegations, to.delegations, addr );
       valideChange = valideChange && valide;
-      Node.debuger.debug("DIFFERENCE: found", valide?'valide':'invalide',"difference in delegations");
     }
   } else if( to.isOptionSet ) { // option is created
     
-    Node.debuger.debug("Option Created:",to.toString());
     var valide = to.testNewOptionActor( addr );
     valideChange = valideChange && valide;
     
   } else if( this.isOption ) {
-    Node.debuger.debug('comparing Options', this.name, '<', this.toString(), '> <', to.toString(), '>' );
     // look in args
     valideChange = valideChange && this.diffArgs( to, addr );
     
-    Node.debuger.debug('comparing votes ',JSON.stringify(this.votes), JSON.stringify(to.votes) );
     // look in voting set
     if( JSON.stringify(this.votes) != JSON.stringify(to.votes) ) {
       
       var valide = this.validateVotes(this.votes, to.votes, addr);
       
-      Node.debuger.debug("DIFFERENCE: found", valide?'valide':'invalide',"difference in voting");
       valideChange = valide;
     }
   } else {
@@ -246,7 +240,6 @@ Node.prototype.validate = function( to, addr ) {
   }
   
 
-  Node.debuger.dec();
   
   
   return valideChange;
@@ -256,31 +249,26 @@ Node.prototype.validate = function( to, addr ) {
 Node.prototype.testNewOptionActor = function( addr ){
   var valide = true;
     
-  Node.debuger.debug("Test Acteurs in new Option:", this.toString());
-  Node.debuger.inc();
   if( this.isOption ) {
     var keys = _.keys(this.votes);
-    valide = valide && keys.length == 0 || (keys.length == 1 && keys[0] == addr);
-    Node.debuger.debug("> votes", this.keys, addr, valide );
+    valide = valide && keys.length == 0 || (keys.length == 1 && keys[0] == addr);
   } else if(this.isOptionSet ){
     var keys = _.map(this.delegations, function(d){ return d[0]; });
-    valide = valide && keys.length == 0 || (keys.length == 1 && keys[0] == addr);
+    valide = valide && keys.length == 0 || (keys.length == 1 && keys[0] == addr);
     
-    Node.debuger.debug("> delegations", this.keys, addr, valide );
     
     this.options.forEach( function(o){
       valide = valide && o.testNewOptionActor( addr );
     });
   }
   
-  if( !this.isOptionSet ) {
+  if( !this.isOptionSet ) {
     this.args.forEach( function(a){
       if( typeof a == 'object' ) {
         valide = valide && a.testNewOptionActor( addr );
       }
     });
   }
-  Node.debuger.dec();
 
   // each nested
   return valide;
@@ -331,18 +319,14 @@ Node.prototype.validateVotes = function( json1, json2, addr){
 Node.prototype.diffArgs = function( to, addr ){
   
   var valideChange = true;
-  Node.debuger.debug('looking in', this.args.length,'args:', this.args.join(','))
   
-    Node.debuger.inc();
   _.each( this.args, function(r,i) { 
-    Node.debuger.debug( 'looking in', typeof r, r )
     
     
     if( typeof r == 'object' && r.name ) {
       valideChange = valideChange && r.validate( to.args[i], addr ); 
     }
   });
-  Node.debuger.dec();
   
   return valideChange;
   
@@ -374,14 +358,7 @@ Node.prototype.addAST = function( ast ){
 }
 
 Node.prototype.merge = function( node ){
-  Node.debuger.inc();
-  // Node.debuger.debug(JSON.stringify(this,false,2))
-  Node.debuger.debug('Merging Rules',
-      '<', this.name, '=', this.rule, '>',
-      '<', node.name, '=', node.rule, '>' );
-  
   mergeArgs = function ( node1, node2 ) {
-    Node.debuger.debug('Merging Args <', node1.args.join(',') ,'> <', node2.args.join(','),'>' );
     
     node1.args.forEach( function( a1, i ){
       var a2 = node2.args[i];
@@ -389,9 +366,7 @@ Node.prototype.merge = function( node ){
         a1.merge( a2 );
       } else if ( typeof a1 == 'string' ){
         if( a1 != a2 ) {
-          Node.debuger.debug('CREATE Option', a1, a2 );
         } else {
-          Node.debuger.debug('MATCH', a1, a2 );
         }
       }
     });
@@ -400,10 +375,7 @@ Node.prototype.merge = function( node ){
   if( this.rulename == node.rulename && this.rule == node.rule ) {
     
     if( this.isOptionSet ) {
-      Node.debuger.debug('OPTION SET');
     } else if( this.isOption ){ 
-      Node.debuger.debug('OPTION', this.args );
-      Node.debuger.debug('OPTION', node.args );
       
       mergeArgs( this, node );
     } else {
@@ -413,17 +385,14 @@ Node.prototype.merge = function( node ){
     
     // console.log( this, node );
   } else if( this.isOptionSet ) {
-    Node.debuger.debug( 'OPTION SET' );
     var foundRule = false;
     
     // look for each option if current rule is al
     this.options.forEach( function( o, i ){
-      Node.debuger.debug( 'RULE', o.rule );
       if( o.rule == node.rule ) {
         foundRule = true;
         // [TODO] - find right option to continue merging or extend option set
         o.merge( node )
-        // Node.debuger.debug( 'OPTION FOUND', o.toString(), node.toString() );
       }
     });
     
@@ -434,7 +403,6 @@ Node.prototype.merge = function( node ){
     }
     
   } else if( this.rulename == node.rulename && this.rule != node.rule ) {
-    if( this.isOption ) Node.debuger.debug("Unhandled Option creation in an Option, possible crash with node name");
     
     node.isOption = true;
     node.name = "O_" + node.name;
@@ -445,10 +413,7 @@ Node.prototype.merge = function( node ){
     this.isOptionSet = true;
     this.options = [ o1, node ]; 
     this.args = [ '[', this.options, ']' ]
-    Node.debuger.debug("create option set", this.toString());
   } else {
-    Node.debuger.debug("UNHANDLED");
   }
   
-  Node.debuger.dec();
 }
