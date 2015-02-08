@@ -3,13 +3,13 @@
 /* lexical grammar */
 %lex
 
-H                          [0-9a-f]
-/*H2                         {H}{H}*/
-/*H4                         {H2}{H2}*/
-/*H8                         {H2}{H2}*/
-/*H16                        {H8}{H8}*/
-/*H32                        {H16}{H16}*/
-/*H64                        {H32}{H32}*/
+H                          ([1-9A-Za-z][^OIl])
+H2                         {H}{H}
+H4                         {H2}{H2}
+H8                         {H2}{H2}
+H16                        {H8}{H8}
+H32                        {H16}{H16}
+H64                        {H32}{H32}
 
 %%
 
@@ -22,8 +22,8 @@ H                          [0-9a-f]
 
 /*  EXTENDED TOKENS  */
 
-0x{H}+                     return 'HASH'
-\d+\.\d                    return 'FLOAT'
+H32                        return 'HASH'
+(\d+\.\d)                  return 'FLOAT'
 [\d]+                      return 'NUMBER'
 '['                        return '['
 ']'                        return ']'

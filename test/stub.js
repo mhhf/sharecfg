@@ -322,6 +322,24 @@ describe('w+mw', function() {
     
   });
   
+  it('should optimize prefix free option sets and single options', function(){
+    
+    Node.debuger = new Debuger(true);
+    Node.debuger.active = true;
+    
+    grammar = fs.readFileSync('abcGrammer.y','utf8');
+    g = Preparser.parse( grammar )
+    parser = new Parser(g);
+    parser.yy.Node = Node;
+    content = "[[0x00 1] [0x01 2]] [a a b &[] ] []";
+    
+    var ast = parser.parse(content);
+    ast.add( 'a', parser );
+    var string = ast.toString();
+    string.should.equal( "[[0x00 1] [0x01 2]] [a a b &[] a &[] ] []" );
+    
+  });
+  
 
   // [TODO] - vote inherencements
   // [TODO] - reject manipulation of acteurs

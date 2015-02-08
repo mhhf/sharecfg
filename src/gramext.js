@@ -2,107 +2,91 @@ require('underscore')
 fs = require('fs');
 bnf = require('ebnf-parser');
 
-var grammar =  " %lex \n" +
-" \n" +
-" H                          [0-9a-f] \n" +
-" /*H2                         {H}{H}*/ \n" +
-" /*H4                         {H2}{H2}*/ \n" +
-" /*H8                         {H2}{H2}*/ \n" +
-" /*H16                        {H8}{H8}*/ \n" +
-" /*H32                        {H16}{H16}*/ \n" +
-" /*H64                        {H32}{H32}*/ \n" +
-" \n" +
-" %% \n" +
-" \n" +
-" /*%token block*/ \n" +
-" \n" +
-" \n" +
-" \n" +
-" \s                         /* IGNORE */ \n" +
-" \n" +
-" \n" +
-" /*  EXTENDED TOKENS  */ \n" +
-" \n" +
-" 0x{H}+                     return 'HASH' \n" +
-" \d+\.\d                    return 'FLOAT' \n" +
-" [\d]+                      return 'NUMBER' \n" +
-" '['                        return '[' \n" +
-" ']'                        return ']' \n" +
-" '&'                        return '&' \n" +
-" \n" +
-" \n" +
-" /*  ORIGINAL TOKENS  */ \n" +
-" \n" +
-" \n" +
-" \n" +
-" /lex \n" +
-" \n" +
-" \n" +
-" %start SSA \n" +
-" \n" +
-" %% /* language grammar */ \n" +
-" \n" +
-" /* EXTENDED GRAMMER */ \n" +
-" \n" +
-" \n" +
-" /* \n" +
-" SSA: '[' ACTEURS ']' SA \n" +
-   " { return new yy.Node('SSA',[ '[', $2, ']', $4 ]); } \n" +
-   " ; \n" +
-" */ \n" +
-" \n" +
-" SSA: '[' ACTEURS ']' '[' START ']' '[' DELEGATIONS ']' \n" +
-   " { \n" +
-    " var node = new yy.Node('SSA',[ '[', $2, ']', '[', $5, ']', '[', $8, ']' ], {delegations: $8}); \n" +
-    " node.build(); \n" +
-    " return node; \n" +
-   " } \n" +
-   " ; \n" +
- " \n" +
-" ACTEURS: '[' HASH NUMBER ']' ACTEURS \n" +
-       " { \n" +
-        " var obj; \n" +
-        " if( typeof $5 == 'object' ) { \n" +
-          " obj = $5; \n" +
-        " } else { \n" +
-          " obj = {}; \n" +
-        " } \n" +
-        " obj[$2] = parseInt($3); $$ = obj; \n" +
-       " } \n" +
-       " | /* empty */ \n" +
-       " ; \n" +
-" \n" +
-" /* TODO: rewrite voting and deligation as own classes */ \n" +
-" VOTING: '[' HASH FLOAT ']' VOTING \n" +
-       " { \n" +
-        " var obj; \n" +
-        " if( typeof $5 == 'object' ) { \n" +
-          " obj = $5; \n" +
-        " } else { \n" +
-          " obj = {}; \n" +
-        " } \n" +
-        " if( obj[$2] ) throw new Error('multiple votes for one acteur are not allowed'); \n" +
-        " obj[$2] = parseFloat($3); $$ = obj; /* [TODO] - check if float is in range && float overflow */ \n" +
-       " } \n" +
-      " | /* empty */ \n" +
-      " ; \n" +
-" \n" +
-" DELEGATIONS: '[' HASH HASH ']' DELEGATIONS \n" +
-           " { $$ = [[$2,$3]].concat($5); } \n" +
-           " | /*empty*/ \n" +
-           " { $$ = []; } \n" +
-           " ; \n" +
-" \n" +
-" \n" +
-" \n" +
-" %% ";
-
-
 // BNF garammar extention
 exports.parse = function( originalGrammarBNF ){
   
   
-  grammarExtentionJSON = bnf.parse(grammar);
+  // grammarExtentionJSON = bnf.parse(grammar);
+grammarExtentionJSON = {
+  "lex": {
+    "rules": [
+      [
+        "\\s",
+        "/* IGNORE */"
+      ],
+      [
+        "{H}{H32}",
+        "return 'HASH'"
+      ],
+      [
+        "(\\d+\\.\\d)",
+        "return 'FLOAT'"
+      ],
+      [
+        "[\\d]+",
+        "return 'NUMBER'"
+      ],
+      [
+        "\\[",
+        "return '['"
+      ],
+      [
+        "\\]",
+        "return ']'"
+      ],
+      [
+        "&",
+        "return '&'"
+      ]
+    ],
+    "macros": {
+      "H64": "{H32}{H32}",
+      "H32": "{H16}{H16}",
+      "H16": "{H8}{H8}",
+      "H8": "{H2}{H2}",
+      "H4": "{H2}{H2}",
+      "H2": "{H}{H}",
+      "H": "([1-9A-Za-z][^OIl])"
+    }
+  },
+  "start": "SSA",
+  "moduleInclude": "\n\n",
+  "bnf": {
+    "SSA": [
+      [
+        "[ ACTEURS ] [ START ] [ DELEGATIONS ]",
+        " \n    var node = new yy.Node('SSA',[ '[', $2, ']', '[', $5, ']', '[', $8, ']' ], {delegations: $8});\n    node.build();\n    return node;\n   "
+      ]
+    ],
+    "ACTEURS": [
+      [
+        "[ HASH NUMBER ] ACTEURS",
+        " \n        var obj;\n        if( typeof $5 == 'object' ) {\n          obj = $5; \n        } else {\n          obj = {}; \n        }\n        obj[$2] = parseInt($3); $$ = obj; \n       "
+      ],
+      ""
+    ],
+    "VOTING": [
+      [
+        "[ HASH FLOAT ] VOTING",
+        " \n        var obj;\n        if( typeof $5 == 'object' ) {\n          obj = $5; \n        } else {\n          obj = {}; \n        }\n        if( obj[$2] ) throw new Error('multiple votes for one acteur are not allowed');\n        obj[$2] = parseFloat($3); $$ = obj; /* [TODO] - check if float is in range && float overflow */\n       "
+      ],
+      ""
+    ],
+    "DELEGATIONS": [
+      [
+        "[ HASH HASH ] DELEGATIONS",
+        " $$ = [[$2,$3]].concat($5); "
+      ],
+      [
+        "",
+        " $$ = []; "
+      ]
+    ]
+  }
+};
+  
+  // grammarJSON = require( './extention.json');
+  // console.log(JSON.stringify( grammarExtentionJSON, false, 2 ) );
     
   origGrammarJSON = bnf.parse( originalGrammarBNF );
     
@@ -273,6 +257,7 @@ exports.parse = function( originalGrammarBNF ){
   // TODO: reference old Start function
   
   
+  // console.log( JSON.stringify( origGrammarJSON, false, 2 ) );
   
   return origGrammarJSON;
 

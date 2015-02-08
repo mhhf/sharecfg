@@ -17036,107 +17036,91 @@ require('underscore')
 fs = require('fs');
 bnf = require('ebnf-parser');
 
-var grammar =  " %lex \n" +
-" \n" +
-" H                          [0-9a-f] \n" +
-" /*H2                         {H}{H}*/ \n" +
-" /*H4                         {H2}{H2}*/ \n" +
-" /*H8                         {H2}{H2}*/ \n" +
-" /*H16                        {H8}{H8}*/ \n" +
-" /*H32                        {H16}{H16}*/ \n" +
-" /*H64                        {H32}{H32}*/ \n" +
-" \n" +
-" %% \n" +
-" \n" +
-" /*%token block*/ \n" +
-" \n" +
-" \n" +
-" \n" +
-" \s                         /* IGNORE */ \n" +
-" \n" +
-" \n" +
-" /*  EXTENDED TOKENS  */ \n" +
-" \n" +
-" 0x{H}+                     return 'HASH' \n" +
-" \d+\.\d                    return 'FLOAT' \n" +
-" [\d]+                      return 'NUMBER' \n" +
-" '['                        return '[' \n" +
-" ']'                        return ']' \n" +
-" '&'                        return '&' \n" +
-" \n" +
-" \n" +
-" /*  ORIGINAL TOKENS  */ \n" +
-" \n" +
-" \n" +
-" \n" +
-" /lex \n" +
-" \n" +
-" \n" +
-" %start SSA \n" +
-" \n" +
-" %% /* language grammar */ \n" +
-" \n" +
-" /* EXTENDED GRAMMER */ \n" +
-" \n" +
-" \n" +
-" /* \n" +
-" SSA: '[' ACTEURS ']' SA \n" +
-   " { return new yy.Node('SSA',[ '[', $2, ']', $4 ]); } \n" +
-   " ; \n" +
-" */ \n" +
-" \n" +
-" SSA: '[' ACTEURS ']' '[' START ']' '[' DELEGATIONS ']' \n" +
-   " { \n" +
-    " var node = new yy.Node('SSA',[ '[', $2, ']', '[', $5, ']', '[', $8, ']' ], {delegations: $8}); \n" +
-    " node.build(); \n" +
-    " return node; \n" +
-   " } \n" +
-   " ; \n" +
- " \n" +
-" ACTEURS: '[' HASH NUMBER ']' ACTEURS \n" +
-       " { \n" +
-        " var obj; \n" +
-        " if( typeof $5 == 'object' ) { \n" +
-          " obj = $5; \n" +
-        " } else { \n" +
-          " obj = {}; \n" +
-        " } \n" +
-        " obj[$2] = parseInt($3); $$ = obj; \n" +
-       " } \n" +
-       " | /* empty */ \n" +
-       " ; \n" +
-" \n" +
-" /* TODO: rewrite voting and deligation as own classes */ \n" +
-" VOTING: '[' HASH FLOAT ']' VOTING \n" +
-       " { \n" +
-        " var obj; \n" +
-        " if( typeof $5 == 'object' ) { \n" +
-          " obj = $5; \n" +
-        " } else { \n" +
-          " obj = {}; \n" +
-        " } \n" +
-        " if( obj[$2] ) throw new Error('multiple votes for one acteur are not allowed'); \n" +
-        " obj[$2] = parseFloat($3); $$ = obj; /* [TODO] - check if float is in range && float overflow */ \n" +
-       " } \n" +
-      " | /* empty */ \n" +
-      " ; \n" +
-" \n" +
-" DELEGATIONS: '[' HASH HASH ']' DELEGATIONS \n" +
-           " { $$ = [[$2,$3]].concat($5); } \n" +
-           " | /*empty*/ \n" +
-           " { $$ = []; } \n" +
-           " ; \n" +
-" \n" +
-" \n" +
-" \n" +
-" %% ";
-
-
 // BNF garammar extention
 exports.parse = function( originalGrammarBNF ){
   
   
-  grammarExtentionJSON = bnf.parse(grammar);
+  // grammarExtentionJSON = bnf.parse(grammar);
+grammarExtentionJSON = {
+  "lex": {
+    "rules": [
+      [
+        "\\s",
+        "/* IGNORE */"
+      ],
+      [
+        "{H}{H32}",
+        "return 'HASH'"
+      ],
+      [
+        "(\\d+\\.\\d)",
+        "return 'FLOAT'"
+      ],
+      [
+        "[\\d]+",
+        "return 'NUMBER'"
+      ],
+      [
+        "\\[",
+        "return '['"
+      ],
+      [
+        "\\]",
+        "return ']'"
+      ],
+      [
+        "&",
+        "return '&'"
+      ]
+    ],
+    "macros": {
+      "H64": "{H32}{H32}",
+      "H32": "{H16}{H16}",
+      "H16": "{H8}{H8}",
+      "H8": "{H2}{H2}",
+      "H4": "{H2}{H2}",
+      "H2": "{H}{H}",
+      "H": "([1-9A-Za-z][^OIl])"
+    }
+  },
+  "start": "SSA",
+  "moduleInclude": "\n\n",
+  "bnf": {
+    "SSA": [
+      [
+        "[ ACTEURS ] [ START ] [ DELEGATIONS ]",
+        " \n    var node = new yy.Node('SSA',[ '[', $2, ']', '[', $5, ']', '[', $8, ']' ], {delegations: $8});\n    node.build();\n    return node;\n   "
+      ]
+    ],
+    "ACTEURS": [
+      [
+        "[ HASH NUMBER ] ACTEURS",
+        " \n        var obj;\n        if( typeof $5 == 'object' ) {\n          obj = $5; \n        } else {\n          obj = {}; \n        }\n        obj[$2] = parseInt($3); $$ = obj; \n       "
+      ],
+      ""
+    ],
+    "VOTING": [
+      [
+        "[ HASH FLOAT ] VOTING",
+        " \n        var obj;\n        if( typeof $5 == 'object' ) {\n          obj = $5; \n        } else {\n          obj = {}; \n        }\n        if( obj[$2] ) throw new Error('multiple votes for one acteur are not allowed');\n        obj[$2] = parseFloat($3); $$ = obj; /* [TODO] - check if float is in range && float overflow */\n       "
+      ],
+      ""
+    ],
+    "DELEGATIONS": [
+      [
+        "[ HASH HASH ] DELEGATIONS",
+        " $$ = [[$2,$3]].concat($5); "
+      ],
+      [
+        "",
+        " $$ = []; "
+      ]
+    ]
+  }
+};
+  
+  // grammarJSON = require( './extention.json');
+  // console.log(JSON.stringify( grammarExtentionJSON, false, 2 ) );
     
   origGrammarJSON = bnf.parse( originalGrammarBNF );
     
@@ -17307,12 +17291,15 @@ exports.parse = function( originalGrammarBNF ){
   // TODO: reference old Start function
   
   
+  // console.log( JSON.stringify( origGrammarJSON, false, 2 ) );
   
   return origGrammarJSON;
 
 }
 
 },{"ebnf-parser":2,"fs":37,"underscore":32}],35:[function(require,module,exports){
+// [TODO] - get all candidates and their normalized votes
+
 _ = require('underscore')._;
 require('./debug.js');
 
@@ -17385,13 +17372,13 @@ Node.prototype.inherit = function( acteurs, delegations ){
   this.build();
 }
 
-Node.prototype.mapArguments = function(){
+Node.prototype.mapArguments = function(indent){
   var argumentMap = _.map( this.args, function(a){
     if( typeof a == "string" )
       return a;
     if( typeof a == "object" ) {
       if( typeof a.name == "string" ) {
-        return a.toString();
+        return a.stringify( indent );
       // } else {
       //   ret = JSON.stringify(a);
       } else {
@@ -17418,24 +17405,31 @@ Node.prototype.mapDelegations = function(){
   return delegationsMap.join(' ');
 }
 
-Node.prototype.toString = function(){
+
+Node.prototype.toString = function( indent ){
+  return this.stringify("  ");
+}
+
+Node.prototype.stringify = function( indent ){
   var string = "";
   
   if( this.name == "SSA" ) {
+    
     aMap = _.map(this.acteurs, function( v,k ){ return "["+k+" "+v+"]" });
-    optionMap = _.map(this.args[4], function(o){ return o.toString(); });
+    optionMap = _.map(this.args[4], function(o){ return o.stringify( (indent?indent+'  ':false) ); });
     string = "[" + aMap.reverse().join(' ') + "] [" + optionMap.join(' ') + " ] [" + this.mapDelegations() + "]";
     
     return string;
   } else if( this.isOptionSet ) {
     oMap = _.map( this.options, function( o ){
-      return o.toString();
+      return o.stringify( (indent?indent+'  ':false) );
     });
-    return "[" + oMap.join(' ') + "] [" + this.mapDelegations() + "]" ;
+    
+    return "[" +(indent?'\n'+indent:'')+ oMap.join(' '+(indent?'\n'+indent:'')) +(indent?'\n':'')+ "] [" + this.mapDelegations() + "]" ;
   } else if( this.isOption ) {
-    return this.mapArguments() + " &[" + this.mapVotes() + "]";
+    return this.mapArguments(indent) + " &[" + this.mapVotes() + "]";
   } else {
-    return this.mapArguments();
+    return this.mapArguments(indent);
   }
 }
 
@@ -17564,7 +17558,7 @@ Node.prototype.testNewOptionActor = function( addr ){
     
   if( this.isOption ) {
     var keys = _.keys(this.votes);
-    valide = valide && keys.length == 0 || (keys.length == 1 && keys[0] == addr);
+    valide = valide && keys.length == 0 || (keys.length == 1 && keys[0] == addr);
   } else if(this.isOptionSet ){
     var keys = _.map(this.delegations, function(d){ return d[0]; });
     valide = valide && keys.length == 0 || (keys.length == 1 && keys[0] == addr);
@@ -17671,6 +17665,7 @@ Node.prototype.addAST = function( ast ){
 }
 
 Node.prototype.merge = function( node ){
+  
   mergeArgs = function ( node1, node2 ) {
     
     node1.args.forEach( function( a1, i ){
@@ -17685,6 +17680,7 @@ Node.prototype.merge = function( node ){
     });
   }
   
+  // if same rules are used
   if( this.rulename == node.rulename && this.rule == node.rule ) {
     
     if( this.isOptionSet ) {

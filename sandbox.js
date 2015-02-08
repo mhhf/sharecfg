@@ -15,7 +15,7 @@ var grammar = fs.readFileSync('abcGrammer.y','utf8');
 // var content2 = fs.readFileSync('abc2.md','utf8');
 
 
-content = "[[0x00 10] [0x01 20] [0x02 10] [0x03 5]] [a a [b b &[] a b b &[] ][] &[] ] [[0x03 0x02]]";
+content = "[[1C7zdTfnkzmr13HfA2vNm5SJYRK6nEKyq8 10]] [a a [b b &[] a b b &[] ][] &[] ] [[1C7zdTfnkzmr13HfA2vNm5SJYRK6nEKyq8 1C7zdTfnkzmr13HfA2vNm5SJYRK6nEKyq8]]";
 content2 = "aa";
  
 
