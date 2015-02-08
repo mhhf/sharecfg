@@ -426,3 +426,72 @@ Node.prototype.merge = function( node ){
   }
   
 }
+
+Node.prototype.genKG = function( kandidates ){
+  if(! kandidates ) kandidates = []; 
+  
+  
+  if( this.name == "SSA" ) {
+    
+    console.log('SSA');
+    optionMap = _.flatten(_.map(this.args[4], function(o){ return o.genKG(); }));
+    
+    console.log('SSA',optionMap);
+    return optionMap;
+  } else if( this.isOptionSet ) {
+    console.log('iOS');
+    oMap = _.map( this.options, function( o ){
+      return o.genKG( );
+    });
+    console.log('iOS', oMap);
+    
+    return _.flatten(oMap);
+  } else if( this.isOption ) {
+    console.log('O');
+    var map = this.mapArgumentsKG(indent);
+    console.log('O', map);
+    return map;
+  } else {
+    console.log('N');
+    var map = this.mapArgumentsKG(indent);
+    console.log('N',map);
+    return map;
+  }
+  console.log('uiuiui');
+  return kandidates;
+}
+
+
+Node.prototype.mapArgumentsKG = function(){
+  var argumentMap = [];
+  _.each( this.args, function(a){
+    if( typeof a == "string" )
+      // console.log('a' ,a);
+      argumentMap.push( a );
+    if( typeof a == "object" ) {
+      if( typeof a.name == "string" ) {
+        
+        kandidates = a.genKG();
+        console.log('k',kandidates, kandidates.length);
+        console.log('A', argumentMap, argumentMap.length);
+        if( argumentMap.length == 0 ) {
+          argumentMap = kandidates;
+          return true;
+        }
+        argumentMap = _.map(argumentMap, function( arg ){
+          return _.map(kandidates, function( k ){
+            return arg + k;
+          });
+        });
+        argumentMap = _.flatten( argumentMap );
+        return true;
+      } else {
+        console.log("Unhandled", a);
+        return "<!>";
+      }
+    }
+  });
+  
+  return argumentMap;
+}
+

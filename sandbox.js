@@ -15,7 +15,7 @@ var grammar = fs.readFileSync('abcGrammer.y','utf8');
 // var content2 = fs.readFileSync('abc2.md','utf8');
 
 
-content = "[[1C7zdTfnkzmr13HfA2vNm5SJYRK6nEKyq8 10]] [a a [b b &[] a b b &[] ][] &[] ] [[1C7zdTfnkzmr13HfA2vNm5SJYRK6nEKyq8 1C7zdTfnkzmr13HfA2vNm5SJYRK6nEKyq8]]";
+content = "[[1C7zdTfnkzmr13HfA2vNm5SJYRK6nEKyq8 10]] [a a [b b &[] a b [b &[] b c &[]][] &[] ][] &[] ] [[1C7zdTfnkzmr13HfA2vNm5SJYRK6nEKyq8 1C7zdTfnkzmr13HfA2vNm5SJYRK6nEKyq8]]";
 content2 = "aa";
  
 
@@ -49,7 +49,7 @@ console.log('\nOUTPUT:'.green);
 var output = parser.parse(content);
 // var output = parser.parse(content2);
 // var output2 = parser.parse(content2);
-console.log( output.toString() );
+console.log( JSON.stringify( output.genKG() ) );
  
 // output.seekDifference( output2 );
 
