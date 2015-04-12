@@ -37,32 +37,18 @@
 
 %start SA
 
-%% /* language grammar */
-
+%% 
 /*  a^* b^* c^*  */
 
-SA: A
-  | 
-  ;
+SA: A |  ;
 
-A: 'a' A
- | 'a'
- | 'b' B
- | 'b' 
- | 'c' C
- | 'c'
- ;
+A: 'a' A | 'a'
+ | 'b' B | 'b' 
+ | 'c' C | 'c';
 
-B: 'b' B
- | 'b'
- | 'c' C
- | 'c' 
- ;
+B: 'b' B | 'b'
+ | 'c' C | 'c';
 
-C: 'c' C
- | 'c'
- ;
-
-
+C: 'c' C | 'c';
 %%
 
